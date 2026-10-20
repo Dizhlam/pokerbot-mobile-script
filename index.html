@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PokerBot Add-on</title>
+<meta name="description" content="Install PokerBot for Kobra Poker on Android, iPhone or a computer">
+<style>
+  :root{--bg:#3d0a0d;--panel:#2a0507;--gold:#d4af37;--text:#f3e9d2;--muted:#d9c9a3;--ok:#3ecf5a}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#2c0709;--panel:#1d0304}}
+  :root[data-theme="dark"]{--bg:#2c0709;--panel:#1d0304}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+  h1{color:var(--gold);font-size:30px;margin:8px 0 4px}
+  h2{color:var(--gold);font-size:21px;margin:28px 0 8px;border-bottom:1px solid #d4af3766;padding-bottom:6px}
+  .lead{color:var(--muted);margin:0 0 18px}
+  .install{display:block;text-align:center;background:#1f7a3a;color:#fff;font-size:20px;font-weight:700;text-decoration:none;
+    border:2px solid var(--gold);border-radius:14px;padding:16px;margin:18px 0 6px}
+  .ver{text-align:center;color:var(--muted);font-size:13px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:22px 0 0}
+  .tabs button{flex:1;min-width:110px;background:var(--panel);color:var(--text);border:1px solid #d4af3788;border-radius:10px;
+    padding:10px;font-size:15px;cursor:pointer}
+  .tabs button.on{background:var(--gold);color:#2a0507;font-weight:700}
+  .box{background:var(--panel);border:1px solid #d4af3766;border-radius:12px;padding:14px 16px;margin-top:10px}
+  ol{padding-left:22px;margin:6px 0}li{margin:7px 0}
+  code{background:#00000055;border-radius:5px;padding:1px 5px}
+  .note{color:var(--muted);font-size:14px}
+  a{color:var(--gold)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>♠ PokerBot add-on</h1>
+  <p class="lead">Plays Texas Hold'em for you on <b>kobrapoker.com</b> (play money) right in your browser, on a phone or a
+    computer. It explains every decision, sits down at your tables by itself, learns how other players play and keeps
+    your stats.</p>
+
+  <div class="tabs">
+    <button data-t="android">Android</button><button data-t="iphone">iPhone / iPad</button><button data-t="pc">Computer</button>
+  </div>
+
+  <div class="box" id="android">
+    <b>Android: Firefox + Tampermonkey</b>
+    <ol>
+      <li>Install <b>Firefox</b> from the Play Store (Chrome on Android can't run add-ons).</li>
+      <li>In Firefox: menu <b>⋮</b> → <b>Extensions</b> (Add-ons) → find <b>Tampermonkey</b> → <b>Add</b>.</li>
+      <li>Open <b>this page in Firefox</b> and tap the green <b>Install PokerBot</b> button below → Tampermonkey shows the add-on → <b>Install</b>.</li>
+      <li>Open <a href="https://kobrapoker.com/play/">kobrapoker.com/play</a> in Firefox. Turn the phone sideways for a bigger table.</li>
+    </ol>
+  </div>
+  <div class="box hidden" id="iphone">
+    <b>iPhone / iPad: Safari + Userscripts (free)</b>
+    <ol>
+      <li>Install <b>Userscripts</b> from the App Store (free, by Justin Wasack). Open it once and tap <b>Set Userscripts Directory</b> (any folder is fine).</li>
+      <li>Settings → <b>Apps → Safari → Extensions → Userscripts</b>: turn it on and allow it on <b>kobrapoker.com</b> (or All Websites).</li>
+      <li>Open <b>this page in Safari</b> and tap <b>Install PokerBot</b> below. Safari shows the code: tap the <b>extensions icon</b> in the address bar (puzzle piece or <b>ᴀA</b>) → <b>Userscripts</b> → <b>Install</b>.</li>
+      <li>Open <a href="https://kobrapoker.com/play/">kobrapoker.com/play</a> in Safari. Turn the phone sideways for a bigger table.</li>
+    </ol>
+  </div>
+  <div class="box hidden" id="pc">
+    <b>Computer: Chrome, Edge or Firefox + Tampermonkey</b>
+    <ol>
+      <li>Install <b>Tampermonkey</b> from your browser's extension store.</li>
+      <li>Chrome / Edge only: open the extension's <b>Details</b> and turn on <b>Allow user scripts</b> (Tampermonkey shows how).</li>
+      <li>Click <b>Install PokerBot</b> below → <b>Install</b>.</li>
+      <li>Open <a href="https://kobrapoker.com/play/">kobrapoker.com/play</a>. <b>F8</b> starts/stops the bot at the current table.</li>
+    </ol>
+  </div>
+
+  <a class="install" href="pokerbot.user.js">Install PokerBot</a>
+  <div class="ver">Version 2026.10.20.2255</div>
+
+  <h2>Using it</h2>
+  <ol>
+    <li>Log in to Kobra as usual. Tick <b>Remember password</b> so the browser keeps you logged in. PokerBot never sees or stores your password.</li>
+    <li>Tap the gold <b>♠</b> button at the bottom left to open the panel.</li>
+    <li>Under <b>My tables</b>, add tables by name (or tap <b>Pick from Kobra's table list</b>).</li>
+    <li>Press <b>▶ Play</b>. The bot finds a free seat, buys in and plays. <b>■ Stop</b> stops it; <b>Leave</b> leaves after the current hand.</li>
+  </ol>
+  <p class="note">Settings: play style (careful, normal, aggressive), buy-in, leave at 2× (lock in a win), stop-loss, leave when the
+    table is full, thinking time. <b>Stats</b> shows your results with real card icons, <b>Players</b> shows what it learned about opponents,
+    <b>Log</b> shows every decision and why.</p>
+  <p class="note"><b>Phones:</b> keep the Kobra tab open and in front. The bot keeps the screen on while it plays, but phones pause
+    hidden tabs and locked screens. Plug the phone in for long sessions.</p>
+
+  <h2>Updates</h2>
+  <p>Nothing to do: every time Kobra opens, the add-on loads the newest version from this page. Your add-on manager also checks for
+    updates by itself (Tampermonkey about once a day; in Userscripts you can tap <b>Check for updates</b>).</p>
+
+  <h2>Privacy</h2>
+  <p class="note">Everything (settings, stats, learned players) is saved only in your own browser. The add-on talks to nothing except
+    the Kobra page you have open and this page (to download updates). Play-money tables only.</p>
+</main>
+<script>
+  const tabs = document.querySelectorAll('.tabs button');
+  const show = (t) => {
+    tabs.forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    ['android', 'iphone', 'pc'].forEach((id) => document.getElementById(id).classList.toggle('hidden', id !== t));
+  };
+  tabs.forEach((b) => b.addEventListener('click', () => show(b.dataset.t)));
+  const ua = navigator.userAgent;
+  show(/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'iphone'
+       : /Android/.test(ua) ? 'android' : 'pc');
+</script>
+</body>
+</html>
