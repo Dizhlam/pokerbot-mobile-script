@@ -1,7 +1,7 @@
-// PokerBot add-on core 2026.10.20.2255
+// PokerBot add-on core 2026.10.20.2337
 (function () {
 'use strict';
-const VERSION = "2026.10.20.2255";
+const VERSION = "2026.10.20.2337";
 const HOME = "https://dizhlam.github.io/pokerbot-mobile-script/";
 const READER = (
 // Reads the Kobra Poker table state from the DOM / React props.
@@ -1471,14 +1471,17 @@ const PB = (() => {
   const CSS = `
   :host{all:initial}
   *{box-sizing:border-box}
-  .wrap{position:fixed;left:8px;bottom:8px;z-index:2147483647;font:14px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#f3e9d2;
-    transform-origin:left bottom}
+  .wrap{position:fixed;left:8px;top:8px;z-index:2147483647;font:14px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#f3e9d2;
+    transform-origin:left top}
   .fab{width:54px;height:54px;border-radius:50%;border:2px solid #d4af37;background:#5a0f12;color:#d4af37;font-size:26px;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.6);position:relative}
+    display:flex;align-items:center;justify-content:center;cursor:grab;box-shadow:0 4px 14px rgba(0,0,0,.6);position:relative;
+    touch-action:none;user-select:none;-webkit-user-select:none}
+  .dragging .fab,.dragging .head{cursor:grabbing}
   .fab .dot{position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;border:2px solid #2a0507}
   .panel{width:350px;background:#3d0a0d;border:2px solid #d4af37;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.7);
     display:flex;flex-direction:column;overflow:hidden}
-  .head{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#2a0507;border-bottom:1px solid #d4af3766}
+  .head{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#2a0507;border-bottom:1px solid #d4af3766;
+    cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
   .head b{color:#d4af37;font-size:15px}
   .head .ph{flex:1;font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .x{background:none;border:0;color:#d4af37;font-size:20px;cursor:pointer;padding:0 4px}
@@ -1487,7 +1490,7 @@ const PB = (() => {
   .tabs{display:flex;background:#2a0507}
   .tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#e8d9b5;padding:7px 2px;font-size:13px;cursor:pointer}
   .tabs button.act{border-color:#d4af37;color:#d4af37;font-weight:600}
-  .body{padding:10px;overflow-y:auto}
+  .body{padding:10px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
   .row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
   .btn{flex:1;border:1px solid #d4af37;border-radius:9px;padding:10px 6px;font-size:15px;font-weight:600;cursor:pointer;color:#fff;background:#6b1418}
   .btn.go{background:#1f7a3a}.btn.stop{background:#8a1c1c}.btn.sm{flex:0 0 auto;padding:5px 9px;font-size:12px;font-weight:500}
@@ -1532,13 +1535,61 @@ const PB = (() => {
       this.root = this.host.attachShadow({ mode: 'open' });
       this.root.innerHTML = `<style>${CSS}</style><div class="wrap"></div>`;
       this.wrap = this.root.querySelector('.wrap');
-      this.wrap.addEventListener('click', (e) => this.click(e));
+      this.shell = null;
+      this.wrap.addEventListener('click', (e) => { if (Date.now() < this.noClickUntil) { e.stopPropagation(); return; } this.click(e); });
       this.wrap.addEventListener('change', (e) => this.change(e));
       this.wrap.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'addt') this.addTable(); e.stopPropagation(); });
+      // while the user scrolls or touches the panel, don't redraw it (a redraw would interrupt the scroll)
+      const hold = () => { this.holdUntil = Date.now() + 1500; };
+      for (const ev of ['scroll', 'wheel', 'touchstart', 'touchmove']) this.wrap.addEventListener(ev, hold, { capture: true, passive: true });
+      this.initDrag();
       const fit = () => this.fit();
       addEventListener('resize', fit);
       if (window.visualViewport) visualViewport.addEventListener('resize', fit);
       this.render(true);
+    },
+
+    // drag the ♠ button (or the panel by its title bar) anywhere on the screen; the spot is remembered
+    initDrag() {
+      let d = null;
+      this.wrap.addEventListener('pointerdown', (e) => {
+        const handle = e.target.closest('.fab, .head');
+        if (!handle || e.target.closest('button:not(.fab)') || e.button > 0) return;
+        d = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x0: parseFloat(this.wrap.style.left) || 0,
+              y0: parseFloat(this.wrap.style.top) || 0, moved: false, handle };
+        try { handle.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      });
+      this.wrap.addEventListener('pointermove', (e) => {
+        if (!d || e.pointerId !== d.id) return;
+        const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+        if (!d.moved && Math.hypot(dx, dy) < 8) return;
+        d.moved = true;
+        this.holdUntil = Date.now() + 1500;
+        this.wrap.classList.add('dragging');
+        this.place(d.x0 + dx, d.y0 + dy);
+        e.preventDefault();
+      });
+      const end = (e) => {
+        if (!d || e.pointerId !== d.id) return;
+        if (d.moved) {
+          const x = parseFloat(this.wrap.style.left) || 0, y = parseFloat(this.wrap.style.top) || 0;
+          cfg.pos = { x: x / innerWidth, y: y / innerHeight };
+          saveCfg();
+          this.noClickUntil = Date.now() + 400;      // the drag must not count as a tap
+        }
+        this.wrap.classList.remove('dragging');
+        d = null;
+      };
+      this.wrap.addEventListener('pointerup', end);
+      this.wrap.addEventListener('pointercancel', end);
+    },
+
+    // put the panel at x,y (page pixels), kept fully on screen
+    place(x, y) {
+      const r = this.wrap.getBoundingClientRect();
+      const maxX = Math.max(0, innerWidth - r.width), maxY = Math.max(0, innerHeight - r.height);
+      this.wrap.style.left = Math.round(Math.max(0, Math.min(maxX, x))) + 'px';
+      this.wrap.style.top = Math.round(Math.max(0, Math.min(maxY, y))) + 'px';
     },
 
     // phones show the full desktop table zoomed out – scale the panel back up so it stays readable
@@ -1550,9 +1601,15 @@ const PB = (() => {
         f = vv && vv.scale ? 1 / vv.scale : innerWidth / (screen.width || innerWidth);
         f = Math.max(1, Math.min(4, f));
       }
-      this.wrap.style.transform = f === 1 ? '' : `scale(${f})`;
+      const tf = f === 1 ? '' : `scale(${f})`;
+      if (this.wrap.style.transform !== tf) this.wrap.style.transform = tf;
       const p = this.root.querySelector('.panel .body');
-      if (p) p.style.maxHeight = Math.round((innerHeight / f) * 0.62) + 'px';
+      const mh = Math.round((innerHeight / f) * 0.62) + 'px';
+      if (p && p.style.maxHeight !== mh) p.style.maxHeight = mh;
+      if (this.wrap.classList.contains('dragging')) return;
+      const r = this.wrap.getBoundingClientRect();
+      const pos = cfg.pos;                           // saved spot, as a share of the screen
+      this.place(pos ? pos.x * innerWidth : 8, pos ? pos.y * innerHeight : innerHeight - r.height - 8);
     },
 
     status() {
@@ -1563,26 +1620,43 @@ const PB = (() => {
       return ['off', 'stopped'];
     },
 
+    // Redraws only what changed. The panel frame is rebuilt only when it opens/closes or the tab changes;
+    // otherwise just the status line and the tab's content are updated, keeping the scroll position.
     render(force) {
       if (!this.wrap) return;
       const focused = this.root.activeElement && /INPUT|SELECT/.test(this.root.activeElement.tagName);
-      if (focused && !force) return;
+      if (!force && (focused || Date.now() < (this.holdUntil || 0))) return;
       const [cls, txt] = this.status();
       if (!cfg.open) {
-        this.wrap.innerHTML = `<div class="fab" data-a="open" title="PokerBot">♠<span class="dot ${cls}"></span></div>`;
+        const html = `<div class="fab" data-a="open" title="PokerBot – tap to open, drag to move">♠<span class="dot ${cls}"></span></div>`;
+        if (this.shell !== 'fab') { this.wrap.innerHTML = html; this.shell = 'fab'; }
+        else this.wrap.querySelector('.fab .dot').className = `dot ${cls}`;
         this.fit();
         return;
       }
       const tabs = [['play', 'Play'], ['settings', 'Settings'], ['stats', 'Stats'], ['players', 'Players'], ['log', 'Log']];
-      const scroll = this.root.querySelector('.body') ? this.root.querySelector('.body').scrollTop : 0;
-      this.wrap.innerHTML = `<div class="panel">
-        <div class="head"><span class="dot ${cls}"></span><b>♠ PokerBot</b><span class="ph">${esc(txt)}</span>
-          <button class="x" data-a="close" title="Minimize">–</button></div>
-        <div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${this.tab === k ? 'act' : ''}">${n}</button>`).join('')}</div>
-        <div class="body">${this[this.tab]()}</div></div>`;
-      const b = this.root.querySelector('.body');
-      if (b) b.scrollTop = scroll;
-      this.fit();
+      if (this.shell !== 'panel:' + this.tab) {
+        this.wrap.innerHTML = `<div class="panel">
+          <div class="head" title="Drag to move"><span class="dot"></span><b>♠ PokerBot</b><span class="ph"></span>
+            <button class="x" data-a="close" title="Minimize">–</button></div>
+          <div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${this.tab === k ? 'act' : ''}">${n}</button>`).join('')}</div>
+          <div class="body"></div></div>`;
+        this.shell = 'panel:' + this.tab;
+        this.bodyHtml = null;
+      }
+      this.wrap.querySelector('.head .dot').className = `dot ${cls}`;
+      const ph = this.wrap.querySelector('.head .ph');
+      if (ph.textContent !== txt) ph.textContent = txt;
+      const body = this.wrap.querySelector('.body');
+      const html = this[this.tab]();
+      this.fit();                                    // size the scroll area before touching its content
+      if (html !== this.bodyHtml) {
+        const scroll = body.scrollTop;
+        body.innerHTML = html;
+        this.bodyHtml = html;
+        body.scrollTop = scroll;
+        this.fit();                                  // the panel may have grown: keep it on screen
+      }
     },
 
     play() {
